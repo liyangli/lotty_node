@@ -1,0 +1,191 @@
+1、未出票
+请求
+{"query":"mutation GetNoTicketOrdersForAdminMutation($input_0:getNoTicketOrdersForAdminInput!) { getNoTicketOrdersForAdmin(input:$input_0) { clientMutationId, ...F0 } } fragment F0 on getNoTicketOrdersForAdminPayload { getNoTicketOrdersForAdmin { errorCode, totalResult, torderDomains { ordertype, desc, prizestate, orderstate, orderamt, id, orderprizeamt, batchcode, orderprize, lotno, betcode, lotmulti, latedteamid, storeId, endtime, caselotStarter, userno, canceltime, playtype, hasachievement, createtime, subaccountType, successtime, eventcode, errorcode, winbasecode, betnum, prizeinfo, orderpreprizeamt, orderinfo, buyuserno, amt, modifytime, subchannel, bettype, isLeague, isWhole, cpId, isCooperate, isPushed, userPhone, lastprinttime, waitTime, isPrinted, jingcaiResults { peilvs { peilv, type }, dxf, day, firsthalfresult, result, team, week, enddate, letpoint, teamId, league } }, value, id } }","variables":{"input_0":{"argsInput":{"type":"","pageNum":1,"orderStatus":0,"pageSize":10,"storeId":"ds51187","token":"221e4315-b198-4d03-b370-8b012c4736c2","sortBy":"lastprinttime","resource":"pc|123","clientType":"store","appVersion":"1.2.28","phoneType":"Win32"},"clientMutationId":"2"}}}
+响应：
+{"data":{"getNoTicketOrdersForAdmin":{"clientMutationId":"2","getNoTicketOrdersForAdmin":{"totalResult":1,"torderDomains":[{"orderprize":null,"subchannel":"00092493","isCooperate":0,"modifytime":null,"cpId":null,"userPhone":"13708805200","batchcode":"","amt":"1000.00","buyuserno":"1406217","isWhole":0,"isLeague":0,"orderinfo":"502@20190314|4|006|03^20190314|4|001|30^_5_200_200","orderpreprizeamt":"0.00","prizeinfo":null,"orderprizeamt":"0.00","betnum":"1.00","id":"TE20190314000062213588","winbasecode":"","errorcode":null,"bettype":"2.00","eventcode":"1_20190314_4_006","hasachievement":"0.00","createtime":1552493297000,"subaccountType":null,"jingcaiResults":[{"result":null,"letpoint":null,"dxf":null,"week":"4","enddate":"03-14 23:55","firsthalfresult":null,"teamId":"001","league":"欧联","peilvs":[{"peilv":"23.00","type":"half_v30"}],"team":"基迪纳摩:切尔西","day":"20190314"},{"result":null,"letpoint":null,"dxf":null,"week":"4","enddate":"03-14 23:55","firsthalfresult":null,"teamId":"006","league":"欧联","peilvs":[{"peilv":"22.00","type":"half_v03"}],"team":"国际米兰:法兰克福","day":"20190314"}],"playtype":"502","successtime":null,"userno":"1406217","canceltime":null,"orderamt":null,"caselotStarter":null,"lastprinttime":1552579200000,"endtime":null,"orderstate":"0.00","storeId":"ds51187","prizestate":"0.00","isPrinted":0,"latedteamid":"1_20190314_4_001","isPushed":null,"betcode":"502@20190314|4|006|03^20190314|4|001|30^","lotmulti":"5.00","lotno":"J00004","waitTime":"3673902","ordertype":"2.00","desc":""}],"errorCode":"0","id":"VG9yZGVyc1Jlc3BvbnNlOm51bGw=","value":null}}}}
+
+2、已出票
+{"query":"mutation GetAllOrdersMutation($input_0:getAllOrdersInput!) { getAllOrders(input:$input_0) { clientMutationId, ...F0 } } fragment F0 on getAllOrdersPayload { getAllOrders { errorCode, totalResult, torderDomains { ordertype, desc, prizestate, orderstate, orderamt, id, orderprizeamt, batchcode, orderprize, lotno, betcode, lotmulti, latedteamid, storeId, endtime, openTime, caselotStarter, userno, canceltime, playtype, hasachievement, createtime, subaccountType, successtime, eventcode, errorcode, winbasecode, betnum, prizeinfo, orderpreprizeamt, orderinfo, buyuserno, amt, modifytime, subchannel, bettype, isNeedPhoto, realPrizeAmt, cpId, isCooperate, isLeague, isWhole, isPushed, cooperateOrder { fee, id }, userPhone, jingcaiResults { peilvs { peilv, type }, dxf, day, firsthalfresult, result, team, week, enddate, letpoint, teamId, league } }, value, id } }","variables":{"input_0":{"argsInput":{"type":"","pageNum":1,"orderStatus":"1,7","pageSize":10,"storeId":"ds51187","token":"221e4315-b198-4d03-b370-8b012c4736c2","resource":"pc|123","clientType":"store","appVersion":"1.2.28","phoneType":"Win32"},"clientMutationId":"t"}}}
+{
+    data: {
+        getAllOrders:{
+            clientMutationId: t,
+            getAllOrders:{
+                errorCode: 0,
+                id: 'XXXX',
+                torderDomains:[{
+                    amt: 1000.00,
+                    batchcode: '',
+                    betcode: '503@20190311|1|006|J00013|3^20190311|1|005|J00001|0^20190311|1|007|J00013|3^',
+                    betnum: 1.00,
+                    bettype: 2.00,
+                    buyuserno: 1292404,
+                    canceltime: null,
+                    caselotStarter: null,
+                    cpId: null,
+                    createtime: 155334343434343,
+                    desc: '',
+                    endtime: null,
+                    errorcode: null,
+                    eventcode: '1_20190311_1_007',
+                    hasachievement: 0.00,
+                    id:"TE20190311000061634341",
+                    isCooperate:0,
+                    isLeague:0,
+                    isNeedPhoto: 1.00,
+                    isPushed: null,
+                    isWhole: 0,
+                    jingcaiResults:[{
+                        day:20190311,
+                        dxf: null,
+                        enddate: "03-11 23:55",
+                        firsthalfresult: null,
+                        league: "德甲",
+                        letpoint: "+1",
+                        peilvs: [{
+                            peilv: 2.25,
+                            type: "v0"
+                        }],
+                        result: null,
+                        team: "杜塞多夫:法兰克福",
+                        teamId:005,
+                        week: 1
+                    }],
+                    latedteamid: "1_20190311_1_005",
+                    lotmulti: 10.00,
+                    lotno: "J00011",
+                    modifytime: null,
+                    orderamt: null,
+                    orderinfo: "503@20190311|1|006|J00013|3^20190311|1|005|J00001|0^20190311|1|007|J00013|3^_10_200_200",
+                    orderpreprizeamt: 0.00,
+                    orderprize: null,
+                    orderprizeamt: 0.00,
+                    orderstate: 0.00,
+                    ordertype: 2.00,
+                    playtype: 503,
+                    prizeinfo: null,
+                    prizestate: 0.00,
+                    storeId: ds51187,
+                    subaccountType: null,
+                    subchannel: "00092493",
+                    successtime:null,
+                    userno: 1292404,
+                    userPhone: 18043827824,
+                    winbasecode: ""
+                }]
+            }
+        }
+    }
+}
+
+3、已撤单
+{"query":"mutation GetAllOrdersMutation($input_0:getAllOrdersInput!) { getAllOrders(input:$input_0) { clientMutationId, ...F0 } } fragment F0 on getAllOrdersPayload { getAllOrders { errorCode, totalResult, torderDomains { ordertype, desc, prizestate, orderstate, orderamt, id, orderprizeamt, batchcode, orderprize, lotno, betcode, lotmulti, latedteamid, storeId, endtime, openTime, caselotStarter, userno, canceltime, playtype, hasachievement, createtime, subaccountType, successtime, eventcode, errorcode, winbasecode, betnum, prizeinfo, orderpreprizeamt, orderinfo, buyuserno, amt, modifytime, subchannel, bettype, isNeedPhoto, realPrizeAmt, cpId, isCooperate, isLeague, isWhole, isPushed, cooperateOrder { fee, id }, userPhone, jingcaiResults { peilvs { peilv, type }, dxf, day, firsthalfresult, result, team, week, enddate, letpoint, teamId, league } }, value, id } }","variables":{"input_0":{"argsInput":{"type":"","pageNum":1,"orderStatus":2,"pageSize":10,"storeId":"ds51187","token":"221e4315-b198-4d03-b370-8b012c4736c2","resource":"pc|123","clientType":"store","appVersion":"1.2.28","phoneType":"Win32"},"clientMutationId":"F"}}}
+{
+    data: {
+        getAllOrders:{
+            clientMutationId: t,
+            getAllOrders:{
+                errorCode: 0,
+                id: 'XXXX',
+                torderDomains:[{
+                    amt: 1000.00,//投注金额单位分
+                    batchcode: '',
+                    betcode: '503@20190311|1|006|J00013|3^20190311|1|005|J00001|0^20190311|1|007|J00013|3^',
+                    betnum: 1.00,
+                    bettype: 2.00,
+                    buyuserno: 1292404,
+                    canceltime: null,
+                    caselotStarter: null,
+                    cpId: null,
+                    createtime: 155334343434343,
+                    desc: '',
+                    endtime: null,
+                    errorcode: null,
+                    eventcode: '1_20190311_1_007',
+                    hasachievement: 0.00,
+                    id:"TE20190311000061634341",
+                    isCooperate:0,
+                    isLeague:0,
+                    isNeedPhoto: 1.00,
+                    isPushed: null,
+                    isWhole: 0,
+                    jingcaiResults:[{
+                        day:20190311,
+                        dxf: null,
+                        enddate: "03-11 23:55",
+                        firsthalfresult: null,
+                        league: "德甲",
+                        letpoint: "+1",
+                        peilvs: [{
+                            peilv: 2.25,
+                            type: "v0"
+                        }],
+                        result: null,
+                        team: "杜塞多夫:法兰克福",
+                        teamId:005,
+                        week: 1
+                    }],
+                    latedteamid: "1_20190311_1_005",
+                    lotmulti: 10.00,
+                    lotno: "J00011",
+                    modifytime: null,
+                    orderamt: null,
+                    orderinfo: "503@20190311|1|006|J00013|3^20190311|1|005|J00001|0^20190311|1|007|J00013|3^_10_200_200",
+                    orderpreprizeamt: 0.00,
+                    orderprize: null,
+                    orderprizeamt: 0.00,
+                    orderstate: 0.00,
+                    ordertype: 2.00,
+                    playtype: 503,
+                    prizeinfo: null,
+                    prizestate: 0.00,
+                    storeId: ds51187,
+                    subaccountType: null,
+                    subchannel: "00092493",
+                    successtime:null,
+                    userno: 1292404,
+                    userPhone: 18043827824,
+                    winbasecode: ""
+                }]
+            }
+        }
+    }
+}
+4、获取用户信息
+{"query":"mutation UserListMutation($input_0:getUserListsInput!) { getUserLists(input:$input_0) { clientMutationId, ...F0 } } fragment F0 on getUserListsPayload { getUserLists { errorCode, totalResult, list { taccount { lastprizeamt, userno, balance }, user { phone, idCode, usericonURL, username, status, registerDate, name, nickname, id, allowPublish, remark, inviteId, channel } }, value, id }, clientMutationId }","variables":{"input_0":{"argsInput":{"pageNum":1,"pageSize":10,"token":"c52f6eb5-b3b5-42d8-ada6-5fb806ce3b53","storeId":"ds51187","resource":"pc|123","clientType":"store","appVersion":"1.2.28","phoneType":"Win32"},"clientMutationId":"Q"}}}
+{
+    data:{
+        getUserLists:{
+            clientMutationId:"Q",
+            getUserLists:{
+                errorCode: 0,
+                id:"xxxxxx",
+                list:[{
+                    taccount:{
+                        balance: 0.00,
+                        lastprizeamt: 0.00,
+                        userno: 1464808
+                    },
+                    user:{
+                        allowPublish: 0,
+                        channel:'苹果端',
+                        id: 1464808,
+                        idCode: '',
+                        inviteId: null,
+                        name: '',
+                        nickname: '',
+                        phone: '15120050982',
+                        registerDate: 1552301018900,
+                        remark: '',
+                        status: 0,
+                        usericonURL: '',
+                        username: "15120050982"
+                    }
+                }]
+            }
+        }
+    }
+}
+5、可能是心跳
+{"query":"mutation FetchAgencyOperatorMutation($input_0:getAgencyAllowInput!) { getAgencyAllow(input:$input_0) { clientMutationId, ...F0 } } fragment F0 on getAgencyAllowPayload { UserAgencyOperatorResult { totalResult, errorCode, operator { allowCheck, userId, storeId }, value, id }, clientMutationId }","variables":{"input_0":{"argsInput":{"userId":"1464808","token":"c52f6eb5-b3b5-42d8-ada6-5fb806ce3b53","storeId":"ds51187","resource":"pc|123","clientType":"store","appVersion":"1.2.28","phoneType":"Win32"},"clientMutationId":"S"}}}
+
