@@ -17,8 +17,19 @@ class Index {
         tableName: "T_Bets_User",
         data: []
       },
+      //已出票
       order: {
         tableName: "T_User_Order",
+        data: []
+      },
+      //未出票
+      noTicket: {
+        tableName: "T_User_No_Ticket_Order",
+        data: []
+      },
+      //撤单
+      cancelOrder:{
+        tableName: "T_User_Cancel_Order",
         data: []
       }
     };
@@ -34,20 +45,10 @@ class Index {
       let obj = cache[attr];
       let tableName = obj.tableName;
       try {
-        if (attr == "order") {
-          let sql = "select id,flag from " + tableName;
-          console.info(sql);
-          let result = await DBDeal.execSql(sql);
-          console.info(result);
-          for (let order of result) {
-            obj.data.push({ id: order.id, flag: order.flag });
-          }
-        } else {
-          let sql = "select id from " + tableName;
-          let result = await DBDeal.execSql(sql);
-          for (let idObj of result) {
-            obj.data.push(idObj.id);
-          }
+        let sql = "select id from " + tableName;
+        let result = await DBDeal.execSql(sql);
+        for (let idObj of result) {
+          obj.data.push(idObj.id);
         }
       } catch (e) {
         console.error("初始化数据时出错了：" + e);
@@ -255,17 +256,19 @@ class Index {
       });
     },10*1000);
 
-    
-    
-    //开始获取所有未出票信息，存入到数据库中；
-    // await this.doNoTicketOrderDeal(adminToken);
-    //已出票，修改对应字段类型数据；
-    // await this.doEmergeOrder(adminToken);
-    // await this.doCancelOrder(adminToken);
+
+    //每10分钟获取一次订单信息
+    setInterval(()=>{
+      Promise.all([self.doNoTicketOrderDeal(adminToken),self.doEmergeOrder(adminToken),self.doCancelOrder(adminToken)]).then((results)=>{
+          console.info("获取订单信息完毕.");
+      });
+      //开始获取所有未出票信息，存入到数据库中；
+    },10*60*1000);
+
+
   }
 
   async doCancelOrder(adminToken) {
-    let self = this;
     let result = await this.findCancelOrder(adminToken);
     let data = result.data.getAllOrders.getAllOrders.torderDomains;
     //获取到的数据，进行判断是否已经含有了直接调整具体的ID;
@@ -274,117 +277,22 @@ class Index {
     }
 
     //缓存中没有的进行添加入库。如果含有状态不正确的进行修改
-    let addOrders = [];
-    let modifyOrders = [];
-    let cache = this.cache.order.data;
-    console.info("=============start==============");
-    for(let order of data){
-      let flag = null;
-      for(let oldOrder of cache){
-        if(order.id == oldOrder.id){
-          flag = oldOrder.flag;
-          break;
-        }
-      }
-      if(flag != null){
-        //判断状态是否一致；
-        if(order.flag != flag){
-          modifyOrders.push(order);
-        }
-      }else{
-        order.flag = 3;
-        addOrders.push(order);
-      }
-
-    }
-    if(modifyOrders && modifyOrders.length > 0){
-      await this.doModifyOrder(modifyOrders,3);
-    }
-
-    //组装添加动作
-    if(addOrders && addOrders.length > 0){
-      await self.doSaveAccount(addOrders, self.cache.order.tableName);
-    }
+    let cancelOrderCache = this.cache.cancelOrder.data;
+    await this.doDealOrder(data,cancelOrderCache,this.cache.cancelOrder.tableName);
   }
 
   async doEmergeOrder(adminToken) {
-    let self = this;
     let result = await this.findEmergeOrder(adminToken);
     let data = result.data.getAllOrders.getAllOrders.torderDomains;
-    //获取到的数据，进行判断是否已经含有了直接调整具体的ID;
-    if (!data || data.length == 0) {
-      return;
-    }
-    
-    //缓存中没有的进行添加入库。如果含有状态不正确的进行修改
-    let addOrders = [];
-    let modifyOrders = [];
-    let cache = this.cache.order.data;
-    for(let order of data){
-        let flag = null;
-        let id = "";
-        for(let oldOrder of cache){
-          if(order.id == oldOrder.id){
-            flag = oldOrder.flag;
-            id = oldOrder.id;
-            break;
-          }
-        }
-      if(flag != null){
-        //判断状态是否一致；
-        if(order.flag != flag){
-          modifyOrders.push(order);
-          //同时调整缓存中对应数据状态；
-          for(let oldOrder of cache){
-            if(order.id == oldOrder.id){
-              oldOrder.flag = flag;
-              break;
-            }
-          }
 
-        }
-      }else{
-        order.flag = 2;
-        addOrders.push(order);
-        for(let order of addOrders){
-          cache.push({id: order.id,flag: order.flag});
-        }
-      }
-        
+    try{
+      await this.doDealOrder(data,this.cache.order.data,this.cache.order.tableName);
+    }catch(e){
+      console.error("解析数据后出现问题了。。。"+e);
     }
-    if(modifyOrders && modifyOrders.length > 0){
-      await this.doModifyOrder(modifyOrders,2);
-    }
-    
-    //组装添加动作
-    if(addOrders && addOrders.length > 0){
-      await self.doSaveAccount(addOrders, self.cache.order.tableName);  
-    }
-    
   }
   
-  async doModifyOrder(orders,flag){
-    let ids = "";
-    let flag = false;
-    for (let order of orders) {
-      if (flag) {
-        ids += ",";
-      } else {
-        flag = true;
-      }
-      ids += "'" + order.id + "'";
-    }
-    let sql =
-        "update " +
-        this.cache.order.tableName +
-        " set flag="+flag+" where id in (" +
-        ids +
-        ")";
-    // 开始执行具体的sql语句
-    console.info(sql);
-    await DBDeal.execSql(sql);
-    
-  }
+
 
   /**
    * 处理所有未出票数据。
@@ -392,7 +300,6 @@ class Index {
    */
   async doNoTicketOrderDeal(adminToken) {
     console.info("======come in doOrderDeal method......");
-    let self = this;
     let result = await this.findNoTicketOrder(adminToken);
     let data =
       result.data.getNoTicketOrdersForAdmin.getNoTicketOrdersForAdmin
@@ -400,25 +307,60 @@ class Index {
     console.info("获取到未出票的数据为。。");
     console.info(data);
     //判断缓存中是否已经存在，如果存在则直接丢弃。
-    let orderCache = this.cache.order.data;
+    let noTicketCache = this.cache.noTicket.data;
+    await this.doDealOrder(data,noTicketCache,this.cache.noTicket.tableName);
+
+  }
+
+  async doDealOrder(data,cache,tableName){
+    if(!data || data.length == 0){
+        return;
+    }
+    let self = this;
     let addOrders = [];
     for (let order of data) {
-      console.info(order);
       let flag = false;
-      for (let oldOrder of orderCache) {
-        if (order.id == oldOrder.id) {
+      for (let oldOrder of cache) {
+        if (order.id == oldOrder) {
           flag = true;
           break;
         }
       }
-      order.flag = 1;
-      addOrders.push(order);
+      if(!flag){
+        addOrders.push(order);
+      }
+
     }
 
-    for (let order in addOrders) {
-      orderCache.push({ id: order.id, flag: 1 });
+    //遍历需要删除的订单
+    let len = cache.length;
+    let delDatas = [];
+    for(let i = len -1;i>=0;i--){
+      let noTicket = cache[i];
+      let flag = false;
+      for (let order of data) {
+        if (order.id == noTicket) {
+          flag = true;
+          break;
+        }
+      }
+      if(!flag){
+        delDatas.push(noTicket);
+        cache.splice(i,1);
+      }
     }
-    self.doSaveAccount(addOrders, self.cache.order.tableName);
+    for (let order in addOrders) {
+      cache.push(order.id);
+    }
+    if(addOrders.length > 0){
+      console.info(addOrders);
+      await self.doSaveAccount(addOrders, tableName);
+    }
+
+    //同时删除指定数据
+    if(delDatas.length > 0){
+      await self.doRemoveOrder(delDatas, tableName);
+    }
   }
   /**
    * 处理爬取的用户信息；
@@ -469,6 +411,25 @@ class Index {
     await self.doSaveAccount(addUserAccount, self.betUserAccount);
   }
 
+  async doRemoveOrder(ids,table){
+    if(!ids|| ids.length == 0){
+      console.error("传入的ids不允许为空");
+      return;
+    }
+    let sql = "delete from "+ table +" where 1=1 and id in (";
+    let flag = false;
+    for(let id of ids){
+        if(!flag){
+          flag = true;
+        }else{
+          sql += ","
+        }
+      sql += "'"+id+"'";
+    }
+    sql += ")";
+    await DBDeal.execSql(sql);
+  }
+
   async doSaveAccount(accounts, table) {
     let self = this;
     //根据属性进行组装sql语句；
@@ -478,25 +439,26 @@ class Index {
     }
 
     let account = accounts[0];
-    let sql = "insert " + table + "(";
-    let flag = false;
-    for (let attr in account) {
-      //判断对应属性是否为对象，如果为对象进行continue
-      if (flag) {
-        sql += ",";
-      } else {
-        flag = true;
-      }
-      sql += "`"+attr+"`";
-    }
-    sql += ") values ";
-    let multFlag = false;
+
+    // let multFlag = false;
     for (let user of accounts) {
-      if (multFlag) {
-        sql += ",";
-      } else {
-        multFlag = true;
+      // if (multFlag) {
+      //   sql += ",";
+      // } else {
+      //   multFlag = true;
+      // }
+      let sql = "insert " + table + "(";
+      let flag = false;
+      for (let attr in account) {
+        //判断对应属性是否为对象，如果为对象进行continue
+        if (flag) {
+          sql += ",";
+        } else {
+          flag = true;
+        }
+        sql += "`"+attr+"`";
       }
+      sql += ") values ";
       sql += "(";
       let sendFlag = false;
       for (let attr in user) {
@@ -514,9 +476,10 @@ class Index {
         }
       }
       sql += ")";
+      console.info(sql);
+      await DBDeal.execSql(sql);
     }
-    console.info(sql);
-    await DBDeal.execSql(sql);
+
   }
 }
 

@@ -7,10 +7,10 @@ let mysql = require("mysql");
 class DBDeal {
   constructor() {
     this.mysqlConn = mysql.createConnection({
-      host: "localhost",
-      port: 3308,
+      host: "74.121.150.248",
+      port: 27460,
       user: "root",
-      password: "123456",
+      password: "LYLlyl_lotty",
       database: "lotty"
     });
     this.mysqlConn.connect();
