@@ -8,6 +8,8 @@
  */
 const HttpUtils = require("./https_utils");
 const DBDeal = require("./db/db_deal");
+const moment = require("moment");
+var CronJob = require("cron").CronJob;
 
 class Index {
   constructor() {
@@ -249,31 +251,146 @@ class Index {
 
     let adminToken = adminTokenResult.adminToken;
     let self = this;
-    setInterval(() => {
-      self.doUserDeal(adminToken).then(result => {
-        console.info("执行完毕。。。。");
-      });
-    }, 10 * 1000);
+    // new CronJob("0 10 * * * *", () => {
+    //   Promise.all([
+    //     self.doUserDeal(adminToken),
+    //     self.doNoTicketOrderDeal(adminToken),
+    //     self.doEmergeOrder(adminToken),
+    //     self.doCancelOrder(adminToken),
+    //     //用户状态统计，每次获取数据后进行修改数据库中对应统计数据
+    //     self.doUserStatistics(adminToken)
+    //   ]).then(results => {
+    //     console.info("获取订单信息完毕.");
+    //   });
+    // });
 
-    //每10分钟获取一次订单信息
-    setInterval(() => {
-      Promise.all([
-        self.doNoTicketOrderDeal(adminToken),
-        self.doEmergeOrder(adminToken),
-        self.doCancelOrder(adminToken)
-      ]).then(results => {
-        console.info("获取订单信息完毕.");
-      });
-      //开始获取所有未出票信息，存入到数据库中；
-    }, 10 * 60 * 1000);
+    // new CronJob("0 10 0 * * *", () => {
+    //   //每天执行一次
+    //   let date = moment()
+    //     .add(-1, "days")
+    //     .format("YYYY-MM-DD");
+    //   console.info(date);
+    //   self.doBetUserStatistics(adminToken, date).then(() => {
+    //     console.info("用户统计数据完毕");
+    //   });
+    //   //存储彩种类型统计数据
 
-    //开启统计任务，10分钟获取一次更新到数据库中
-    setInterval(() => {
-      self.doUserStatistics(adminToken).then(() => {
-        //获取用户统计数据
-        console.info("获取用户统计数据成功");
+    //   self.doLotnoStatistics(adminToken, date).then(() => {
+    //     console.info("彩种类型统计完成。。");
+    //   });
+    // });
+
+    let date = moment()
+      .add(-1, "days")
+      .format("YYYY-MM-DD");
+    self.doLotnoStatistics(adminToken, date).then(() => {
+      console.info("彩种类型统计完成。。");
+    });
+  }
+
+  /**
+   * 进行彩种类型统计
+   */
+  async doLotnoStatistics(adminToken, date) {
+    let result = await this.findLotnoStatistics(adminToken, date);
+    let userChannelResult = result.data.findLotnoByStoreId.UserChannelResult;
+    let errorCode = userChannelResult.errorCode;
+    if (errorCode != 0) {
+      console.error("获取数据出错了，错误对象为：" + result);
+      return;
+    }
+    //开始进行更改数据库中对应统计数据
+    let list = userChannelResult.list;
+    if (list.length == 0) {
+      return;
+    }
+    let lotnos = [];
+    for (let userOrder of list) {
+      lotnos.push({
+        amt: userOrder.amt,
+        channel: userOrder.channel,
+        channelName: userOrder.channelName,
+        channelNum: userOrder.channelNum,
+        lotno: userOrder.lotno,
+        time: date
       });
-    }, 10 * 1000);
+    }
+    await this.doSaveAccount(lotnos, "T_Lotno_Statistics");
+  }
+
+  async findLotnoStatistics(adminToken, date) {
+    let data = {
+      query:
+        "mutation FindLotDataMutation($input_0:findLotnoByStoreIdInput!) { findLotnoByStoreId(input:$input_0) { clientMutationId, ...F0 } } fragment F0 on findLotnoByStoreIdPayload { UserChannelResult { errorCode, value, totalAmt, totalResult, list { storeId, channel, amt, channelNum, channelName, lotno, startDay, endDay }, totalUserNum, id }, clientMutationId }",
+      variables: {
+        input_0: {
+          clientMutationId: "P",
+          argsInput: {
+            startDay: date + " 00:00:00",
+            endDay: date + " 23:59:59",
+            token: adminToken.token,
+            storeId: "ds" + adminToken.adminId,
+            resource: "pc|123",
+            clientType: "store",
+            appVersion: "1.2.31",
+            phoneType: "Win32"
+          }
+        }
+      }
+    };
+
+    return await HttpUtils.sendData({}, data);
+  }
+
+  /**
+   * 彩票用户统计
+   * @param {*} adminToken
+   */
+  async doBetUserStatistics(adminToken, date) {
+    let result = await this.findBetUserStatistics(adminToken, date);
+    console.info(result);
+    let userOrderResult = result.data.getUserOrderList.UserOrderResult;
+    let errorCode = userOrderResult.errorCode;
+    if (errorCode != 0) {
+      console.error("获取数据出错了，错误对象为：" + result);
+      return;
+    }
+    //开始进行更改数据库中对应统计数据
+    let list = userOrderResult.list;
+    if (list.length == 0) {
+      return;
+    }
+    for (let userOrder of list) {
+      userOrder.time = date;
+    }
+    await this.doSaveAccount(list, "T_Bets_User_Statistics");
+  }
+
+  async findBetUserStatistics(adminToken, date) {
+    //获取指定时间数据，执行上一天的统计内容数据，
+    let data = {
+      query:
+        "mutation FetchUserDataForBetMutation($input_0:getUserOrderListInput!) { getUserOrderList(input:$input_0) { clientMutationId, ...F0 } } fragment F0 on getUserOrderListPayload { UserOrderResult { startDay, endDay, totalOrderAmt, totalPrizeAmt, totalResult, list { userno, amt, orderaftprizeamt, nickname, username, remark }, errorCode, value, id }, clientMutationId }",
+      variables: {
+        input_0: {
+          clientMutationId: "N",
+          argsInput: {
+            startDay: date + " 00:00:00",
+            endDay: date + " 23:59:59",
+            pageNum: 1,
+            pageSize: 9999999,
+            token: adminToken.token,
+            storeId: "ds" + adminToken.adminId,
+            resource: "pc|123",
+            clientType: "store",
+            appVersion: "1.2.31",
+            phoneType: "Win32"
+          }
+        }
+      }
+    };
+
+    return await HttpUtils.sendData({}, data);
   }
 
   async doUserStatistics(adminToken) {
