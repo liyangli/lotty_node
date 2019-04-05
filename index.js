@@ -28,7 +28,7 @@ class Index {
         data: []
       },
       //撤单
-      cancelOrder:{
+      cancelOrder: {
         tableName: "T_User_Cancel_Order",
         data: []
       }
@@ -246,26 +246,84 @@ class Index {
       return;
     }
     //定时每10分钟进行获取1次相关数据
-   
 
     let adminToken = adminTokenResult.adminToken;
     let self = this;
-    setInterval(()=>{
-      self.doUserDeal(adminToken).then((result)=>{
+    setInterval(() => {
+      self.doUserDeal(adminToken).then(result => {
         console.info("执行完毕。。。。");
       });
-    },10*1000);
-
+    }, 10 * 1000);
 
     //每10分钟获取一次订单信息
-    setInterval(()=>{
-      Promise.all([self.doNoTicketOrderDeal(adminToken),self.doEmergeOrder(adminToken),self.doCancelOrder(adminToken)]).then((results)=>{
-          console.info("获取订单信息完毕.");
+    setInterval(() => {
+      Promise.all([
+        self.doNoTicketOrderDeal(adminToken),
+        self.doEmergeOrder(adminToken),
+        self.doCancelOrder(adminToken)
+      ]).then(results => {
+        console.info("获取订单信息完毕.");
       });
       //开始获取所有未出票信息，存入到数据库中；
-    },10*60*1000);
+    }, 10 * 60 * 1000);
 
+    //开启统计任务，10分钟获取一次更新到数据库中
+    setInterval(() => {
+      self.doUserStatistics(adminToken).then(() => {
+        //获取用户统计数据
+        console.info("获取用户统计数据成功");
+      });
+    }, 10 * 1000);
+  }
 
+  async doUserStatistics(adminToken) {
+    let result = await this.findUserStatistics(adminToken);
+    let storeMonthDataResult =
+      result.data.getStoreMothData.StoreMonthDataResult;
+    let errorCode = storeMonthDataResult.errorCode;
+    if (errorCode != 0) {
+      console.error("获取数据出错了，错误对象为：" + result);
+      return;
+    }
+    //开始进行更改数据库中对应统计数据
+    await this.doUpdateStatises(1, storeMonthDataResult);
+  }
+
+  /**
+   * 更改统计数据
+   * @param {*} type 类型；1：用户数据；2、出票数据；3、派奖数据；4、取票数据
+   * @param {*} obj 需要更改的对象数据
+   */
+  async doUpdateStatises(type, obj) {
+    let sql = `update T_User_Statistics set monthNum=${obj.monthNum},todayNum=${
+      obj.todayNum
+    },totalResult=${obj.totalResult},value=${obj.value},weekNum=${
+      obj.weekNum
+    } where type=${type}`;
+    console.info("执行sql:" + sql);
+    await DBDeal.execSql(sql);
+  }
+
+  async findUserStatistics(adminToken) {
+    let data = {
+      query:
+        "mutation GetUserTotalDataMutation($input_0:getStoreMothDataInput!) { getStoreMothData(input:$input_0) { clientMutationId, ...F0 } } fragment F0 on getStoreMothDataPayload { StoreMonthDataResult { errorCode, value, todayNum, weekNum, monthNum, totalResult, id }, clientMutationId }",
+      variables: {
+        input_0: {
+          argsInput: {
+            token: adminToken.token,
+            storeId: "ds" + adminToken.adminId,
+            resource: "pc|123",
+            clientType: "store",
+            appVersion: "1.2.31",
+            phoneType: "Win32"
+          },
+          clientMutationId: "Q"
+        }
+      }
+    };
+
+    return await HttpUtils.sendData({}, data);
   }
 
   async doCancelOrder(adminToken) {
@@ -278,21 +336,27 @@ class Index {
 
     //缓存中没有的进行添加入库。如果含有状态不正确的进行修改
     let cancelOrderCache = this.cache.cancelOrder.data;
-    await this.doDealOrder(data,cancelOrderCache,this.cache.cancelOrder.tableName);
+    await this.doDealOrder(
+      data,
+      cancelOrderCache,
+      this.cache.cancelOrder.tableName
+    );
   }
 
   async doEmergeOrder(adminToken) {
     let result = await this.findEmergeOrder(adminToken);
     let data = result.data.getAllOrders.getAllOrders.torderDomains;
 
-    try{
-      await this.doDealOrder(data,this.cache.order.data,this.cache.order.tableName);
-    }catch(e){
-      console.error("解析数据后出现问题了。。。"+e);
+    try {
+      await this.doDealOrder(
+        data,
+        this.cache.order.data,
+        this.cache.order.tableName
+      );
+    } catch (e) {
+      console.error("解析数据后出现问题了。。。" + e);
     }
   }
-  
-
 
   /**
    * 处理所有未出票数据。
@@ -308,13 +372,12 @@ class Index {
     console.info(data);
     //判断缓存中是否已经存在，如果存在则直接丢弃。
     let noTicketCache = this.cache.noTicket.data;
-    await this.doDealOrder(data,noTicketCache,this.cache.noTicket.tableName);
-
+    await this.doDealOrder(data, noTicketCache, this.cache.noTicket.tableName);
   }
 
-  async doDealOrder(data,cache,tableName){
-    if(!data || data.length == 0){
-        return;
+  async doDealOrder(data, cache, tableName) {
+    if (!data || data.length == 0) {
+      return;
     }
     let self = this;
     let addOrders = [];
@@ -326,16 +389,15 @@ class Index {
           break;
         }
       }
-      if(!flag){
+      if (!flag) {
         addOrders.push(order);
       }
-
     }
 
     //遍历需要删除的订单
     let len = cache.length;
     let delDatas = [];
-    for(let i = len -1;i>=0;i--){
+    for (let i = len - 1; i >= 0; i--) {
       let noTicket = cache[i];
       let flag = false;
       for (let order of data) {
@@ -344,21 +406,21 @@ class Index {
           break;
         }
       }
-      if(!flag){
+      if (!flag) {
         delDatas.push(noTicket);
-        cache.splice(i,1);
+        cache.splice(i, 1);
       }
     }
     for (let order in addOrders) {
       cache.push(order.id);
     }
-    if(addOrders.length > 0){
+    if (addOrders.length > 0) {
       console.info(addOrders);
       await self.doSaveAccount(addOrders, tableName);
     }
 
     //同时删除指定数据
-    if(delDatas.length > 0){
+    if (delDatas.length > 0) {
       await self.doRemoveOrder(delDatas, tableName);
     }
   }
@@ -411,20 +473,20 @@ class Index {
     await self.doSaveAccount(addUserAccount, self.betUserAccount);
   }
 
-  async doRemoveOrder(ids,table){
-    if(!ids|| ids.length == 0){
+  async doRemoveOrder(ids, table) {
+    if (!ids || ids.length == 0) {
       console.error("传入的ids不允许为空");
       return;
     }
-    let sql = "delete from "+ table +" where 1=1 and id in (";
+    let sql = "delete from " + table + " where 1=1 and id in (";
     let flag = false;
-    for(let id of ids){
-        if(!flag){
-          flag = true;
-        }else{
-          sql += ","
-        }
-      sql += "'"+id+"'";
+    for (let id of ids) {
+      if (!flag) {
+        flag = true;
+      } else {
+        sql += ",";
+      }
+      sql += "'" + id + "'";
     }
     sql += ")";
     await DBDeal.execSql(sql);
@@ -456,7 +518,7 @@ class Index {
         } else {
           flag = true;
         }
-        sql += "`"+attr+"`";
+        sql += "`" + attr + "`";
       }
       sql += ") values ";
       sql += "(";
@@ -479,7 +541,6 @@ class Index {
       console.info(sql);
       await DBDeal.execSql(sql);
     }
-
   }
 }
 
