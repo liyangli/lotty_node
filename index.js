@@ -251,41 +251,46 @@ class Index {
 
     let adminToken = adminTokenResult.adminToken;
     let self = this;
-    // new CronJob("0 10 * * * *", () => {
-    //   Promise.all([
-    //     self.doUserDeal(adminToken),
-    //     self.doNoTicketOrderDeal(adminToken),
-    //     self.doEmergeOrder(adminToken),
-    //     self.doCancelOrder(adminToken),
-    //     //用户状态统计，每次获取数据后进行修改数据库中对应统计数据
-    //     self.doUserStatistics(adminToken)
-    //   ]).then(results => {
-    //     console.info("获取订单信息完毕.");
-    //   });
-    // });
-
-    // new CronJob("0 10 0 * * *", () => {
-    //   //每天执行一次
-    //   let date = moment()
-    //     .add(-1, "days")
-    //     .format("YYYY-MM-DD");
-    //   console.info(date);
-    //   self.doBetUserStatistics(adminToken, date).then(() => {
-    //     console.info("用户统计数据完毕");
-    //   });
-    //   //存储彩种类型统计数据
-
-    //   self.doLotnoStatistics(adminToken, date).then(() => {
-    //     console.info("彩种类型统计完成。。");
-    //   });
-    // });
-
-    let date = moment()
-      .add(-1, "days")
-      .format("YYYY-MM-DD");
-    self.doLotnoStatistics(adminToken, date).then(() => {
-      console.info("彩种类型统计完成。。");
+    let job = new CronJob("0 */10 * * * *", () => {
+      console.info("========start user、order info================");
+      Promise.all([
+        self.doUserDeal(adminToken),
+        self.doNoTicketOrderDeal(adminToken),
+        self.doEmergeOrder(adminToken),
+        self.doCancelOrder(adminToken),
+        //用户状态统计，每次获取数据后进行修改数据库中对应统计数据
+        self.doUserStatistics(adminToken)
+      ]).then(results => {
+        console.info("获取订单信息完毕.");
+      });
     });
+
+    let statisticsJob = new CronJob("0 10 0 * * *", () => {
+      console.info("========start  statistics================");
+      //每天执行一次
+      let date = moment()
+        .add(-1, "days")
+        .format("YYYY-MM-DD");
+      console.info(date);
+      self.doBetUserStatistics(adminToken, date).then(() => {
+        console.info("用户统计数据完毕");
+      });
+      //存储彩种类型统计数据
+
+      self.doLotnoStatistics(adminToken, date).then(() => {
+        console.info("彩种类型统计完成。。");
+      });
+    });
+
+    job.start();
+    statisticsJob.start();
+
+    // let date = moment()
+    //   .add(-1, "days")
+    //   .format("YYYY-MM-DD");
+    // self.doLotnoStatistics(adminToken, date).then(() => {
+    //   console.info("彩种类型统计完成。。");
+    // });
   }
 
   /**
@@ -409,7 +414,7 @@ class Index {
   /**
    * 更改统计数据
    * @param {*} type 类型；1：用户数据；2、出票数据；3、派奖数据；4、取票数据
-   * @param {*} obj 需要更改的对象数据
+   * @param {*} obj 需要更改的对象数据n
    */
   async doUpdateStatises(type, obj) {
     let sql = `update T_User_Statistics set monthNum=${obj.monthNum},todayNum=${
