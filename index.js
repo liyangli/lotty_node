@@ -259,7 +259,8 @@ class Index {
         self.doEmergeOrder(adminToken),
         self.doCancelOrder(adminToken),
         //用户状态统计，每次获取数据后进行修改数据库中对应统计数据
-        self.doUserStatistics(adminToken)
+        //TODO 用户统计交给平台进行根据员工信息进行统计处理
+        // self.doUserStatistics(adminToken)
       ]).then(results => {
         console.info("获取订单信息完毕.");
       });
